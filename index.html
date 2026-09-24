@@ -1,0 +1,2032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reading Comprehension — Practice App</title>
+<style>
+/* ============================================================
+   BASE
+   ============================================================ */
+* { box-sizing: border-box; }
+
+:root {
+    --header-h: 60px;
+    --primary: #4a7fd4;
+    --primary-dark: #3665b0;
+    --primary-soft: #e8f0fd;
+    --bg: #f4f7fb;
+    --card: #ffffff;
+    --text: #1f2b3d;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --highlight: #fff3a3;
+    --correct: #16a34a;
+    --correct-bg: #e9f9ef;
+    --incorrect: #dc2626;
+    --incorrect-bg: #fdecec;
+    --shadow: 0 1px 3px rgba(15, 23, 42, .06), 0 8px 24px rgba(15, 23, 42, .06);
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, .06);
+}
+
+html, body { margin: 0; padding: 0; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+}
+
+button { font-family: inherit; }
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.app-header {
+    height: var(--header-h);
+    background: #ffffff;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+}
+
+.brand {
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--primary-dark);
+    letter-spacing: .2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.back-btn {
+    background: var(--primary-soft);
+    color: var(--primary-dark);
+    border: 1px solid #d3e2fb;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s ease, transform .15s ease;
+    white-space: nowrap;
+}
+.back-btn:hover { background: #dbe8fc; }
+.back-btn.hidden { visibility: hidden; }
+
+/* ============================================================
+   SCREENS
+   ============================================================ */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ============================================================
+   HOME
+   ============================================================ */
+.home-wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 40px 20px 70px;
+}
+
+.home-wrap h1 {
+    font-size: 28px;
+    margin: 0 0 8px;
+    letter-spacing: -.3px;
+}
+
+.subtitle {
+    color: var(--muted);
+    margin: 0 0 32px;
+    font-size: 15px;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 22px;
+}
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow);
+    border-color: #d5e3f8;
+}
+
+.card-badge {
+    display: inline-block;
+    align-self: flex-start;
+    background: var(--primary-soft);
+    color: var(--primary-dark);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+}
+
+.card h3 {
+    font-size: 19px;
+    margin: 0 0 16px;
+    line-height: 1.35;
+    letter-spacing: -.2px;
+}
+
+.card-meta {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 22px;
+    font-size: 14px;
+    color: var(--muted);
+    flex: 1;
+}
+.card-meta li { padding: 5px 0; }
+.card-meta strong { color: var(--text); }
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+    border-radius: 10px;
+    padding: 11px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background .15s ease, color .15s ease,
+                border-color .15s ease, transform .1s ease;
+}
+.btn:active { transform: scale(.985); }
+
+.btn-primary {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+.btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+
+.btn-ghost {
+    background: #fff;
+    color: var(--text);
+    border-color: var(--border-strong);
+}
+.btn-ghost:hover { background: #f1f5fb; border-color: #b6c6dc; }
+
+.btn.full { width: 100%; }
+
+.btn:disabled {
+    opacity: .42;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ============================================================
+   EXAM LAYOUT  (60% reading / 40% questions)
+   ============================================================ */
+#examScreen.active { display: block; }
+
+.exam-layout {
+    display: grid;
+    grid-template-columns: 60% 40%;
+    height: calc(100vh - var(--header-h));
+    width: 100%;
+}
+
+/* ---------- READING PANEL ---------- */
+.reading-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    border-right: 1px solid var(--border);
+    background: #fff;
+}
+
+.reading-tools {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 12px 26px;
+    border-bottom: 1px solid var(--border);
+    background: #fbfcfe;
+    flex: 0 0 auto;
+}
+
+.tools-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .7px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-right: 4px;
+}
+
+.tool-btn {
+    background: #fff;
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 7px 13px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.tool-btn:hover { background: #f1f5fb; }
+
+.tool-btn.on {
+    background: var(--highlight);
+    border-color: #e8d878;
+    color: #7a5c00;
+}
+
+.tool-btn.clear-btn:hover {
+    background: var(--incorrect-bg);
+    border-color: #f3b6b6;
+    color: var(--incorrect);
+}
+
+.reading-scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 26px 34px 80px;
+    scroll-behavior: smooth;
+}
+
+.reading-title {
+    font-size: 23px;
+    margin: 0 0 22px;
+    line-height: 1.3;
+    letter-spacing: -.3px;
+    color: #14243d;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--primary-soft);
+}
+
+.reading-body p {
+    font-size: 17px;
+    line-height: 1.8;
+    margin: 0 0 20px;
+    color: #26374f;
+}
+
+/* Highlight styling */
+.reading-body.hl-mode {
+    cursor: text;
+}
+
+.highlight {
+    background: var(--highlight);
+    border-radius: 3px;
+    padding: 1px 2px;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    transition: background .15s ease;
+}
+
+.reading-body.hl-mode .highlight {
+    cursor: pointer;
+}
+.reading-body.hl-mode .highlight:hover {
+    background: #ffe980;
+}
+
+.reading-body.hl-mode ::selection {
+    background: #cfe2ff;
+}
+
+/* ---------- QUESTIONS PANEL ---------- */
+.questions-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    background: #fff;
+}
+
+.questions-scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 22px 26px 20px;
+}
+
+.progress-wrap { margin-bottom: 18px; }
+
+.progress-bar {
+    height: 7px;
+    background: #e8eef7;
+    border-radius: 999px;
+    overflow: hidden;
+}
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #6fa2ea, var(--primary));
+    border-radius: 999px;
+    transition: width .25s ease;
+}
+
+.q-number {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 12px;
+}
+
+.q-text {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.55;
+    margin-bottom: 20px;
+    color: #14243d;
+}
+.q-text em { font-style: italic; }
+
+.options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--text);
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.option:hover {
+    background: #f7faff;
+    border-color: #bcd3f3;
+}
+
+.option .option-letter {
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #eef3fb;
+    color: #4a6080;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+    transition: background .15s ease, color .15s ease;
+}
+
+.option .option-text { flex: 1 1 auto; }
+
+.option.selected {
+    background: var(--primary-soft);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(74, 127, 212, .12);
+}
+.option.selected .option-letter {
+    background: var(--primary);
+    color: #fff;
+}
+
+.option.selected::after {
+    content: "✓";
+    color: var(--primary);
+    font-weight: 800;
+    font-size: 15px;
+    align-self: center;
+}
+
+/* ---------- QUESTIONS FOOTER ---------- */
+.questions-footer {
+    flex: 0 0 auto;
+    border-top: 1px solid var(--border);
+    background: #fbfcfe;
+    padding: 14px 26px 18px;
+}
+
+.nav-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.nav-row .btn { flex: 1; }
+
+.dots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 14px;
+}
+
+.nav-dot {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border-strong);
+    background: #fff;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s ease, border-color .15s ease,
+                color .15s ease, transform .1s ease;
+}
+.nav-dot:hover { background: #f1f5fb; transform: translateY(-1px); }
+
+.nav-dot.answered {
+    background: #dceafc;
+    border-color: #a9c8ef;
+    color: var(--primary-dark);
+}
+
+.nav-dot.current {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(74, 127, 212, .18);
+    color: var(--primary-dark);
+    background: #fff;
+}
+.nav-dot.answered.current {
+    background: #cfe2fb;
+}
+
+/* ============================================================
+   RESULT SCREEN
+   ============================================================ */
+.result-wrap {
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 54px 20px 80px;
+}
+
+.result-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 38px 32px;
+    text-align: center;
+    box-shadow: var(--shadow);
+}
+
+.result-emoji { font-size: 46px; line-height: 1; margin-bottom: 10px; }
+
+.result-card h2 {
+    margin: 0 0 6px;
+    font-size: 25px;
+    letter-spacing: -.3px;
+}
+
+.result-reading {
+    color: var(--muted);
+    font-size: 14.5px;
+    margin-bottom: 26px;
+}
+
+.score-big {
+    font-size: 48px;
+    font-weight: 800;
+    color: var(--primary-dark);
+    letter-spacing: -1.5px;
+    line-height: 1.1;
+}
+
+.score-pct {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--muted);
+    margin-top: 6px;
+    margin-bottom: 28px;
+}
+
+.score-stats {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+.stat {
+    flex: 1 1 0;
+    background: #f7fafd;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 10px;
+}
+.stat span {
+    display: block;
+    font-size: 24px;
+    font-weight: 800;
+}
+.stat small {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-weight: 700;
+}
+.stat.correct-stat span { color: var(--correct); }
+.stat.incorrect-stat span { color: var(--incorrect); }
+
+.result-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+}
+
+/* ============================================================
+   REVIEW SCREEN
+   ============================================================ */
+.review-wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 34px 20px 80px;
+}
+
+.review-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 26px;
+}
+.review-head h2 {
+    margin: 0;
+    font-size: 22px;
+    letter-spacing: -.3px;
+}
+
+.review-item {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-left: 5px solid var(--border-strong);
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+}
+.review-item.ok { border-left-color: var(--correct); }
+.review-item.bad { border-left-color: var(--incorrect); }
+
+.review-qnum {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+}
+
+.tag {
+    font-size: 11.5px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    letter-spacing: .3px;
+    text-transform: none;
+}
+.tag.ok { background: var(--correct-bg); color: var(--correct); }
+.tag.bad { background: var(--incorrect-bg); color: var(--incorrect); }
+
+.review-qtext {
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.55;
+    margin-bottom: 14px;
+    color: #14243d;
+}
+.review-qtext em { font-style: italic; }
+
+.review-options {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.review-options li {
+    font-size: 15.5px;
+    line-height: 1.5;
+    padding: 11px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #fbfcfe;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.review-options li.correct-opt {
+    background: var(--correct-bg);
+    border-color: #b6e6c9;
+}
+.review-options li.wrong-opt {
+    background: var(--incorrect-bg);
+    border-color: #f3bcbc;
+}
+
+.opt-letter { font-weight: 700; color: var(--muted); }
+
+.your-tag {
+    font-size: 11.5px;
+    font-weight: 700;
+    background: #e6eefb;
+    color: var(--primary-dark);
+    padding: 2px 8px;
+    border-radius: 999px;
+    align-self: center;
+}
+
+.review-note {
+    margin-top: 12px;
+    font-size: 14px;
+    color: var(--incorrect);
+    font-weight: 600;
+}
+
+.review-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 30px;
+}
+
+/* ============================================================
+   MODALS
+   ============================================================ */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, .5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.modal-overlay.show { display: flex; }
+
+.modal {
+    background: #fff;
+    border-radius: 18px;
+    padding: 28px 26px 22px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, .28);
+    animation: pop .16s ease;
+}
+
+@keyframes pop {
+    from { transform: scale(.96); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+}
+
+.modal h3 {
+    margin: 0 0 10px;
+    font-size: 19px;
+    letter-spacing: -.2px;
+}
+
+.modal p {
+    margin: 0 0 22px;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+.modal-actions .btn { flex: 1 1 auto; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px) {
+    .exam-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+
+    .reading-panel,
+    .questions-panel {
+        height: auto;
+        overflow: visible;
+    }
+
+    .reading-scroll {
+        overflow: visible;
+        padding: 22px 20px 30px;
+        max-height: none;
+    }
+
+    .questions-scroll {
+        overflow: visible;
+        padding: 22px 20px 16px;
+    }
+
+    .reading-panel { border-right: none; border-bottom: 1px solid var(--border); }
+
+    .questions-footer { position: sticky; bottom: 0; }
+
+    .home-wrap h1 { font-size: 24px; }
+    .reading-title { font-size: 20px; }
+    .reading-body p { font-size: 16.5px; }
+    .q-text { font-size: 17px; }
+}
+
+@media (max-width: 480px) {
+    .app-header { padding: 0 14px; }
+    .brand { font-size: 15px; }
+    .back-btn { padding: 7px 11px; font-size: 13px; }
+    .nav-dot { width: 31px; height: 31px; font-size: 13px; }
+    .result-card { padding: 28px 20px; }
+    .score-big { font-size: 40px; }
+    .reading-scroll { padding: 18px 16px 26px; }
+    .questions-scroll { padding: 18px 16px 14px; }
+    .questions-footer { padding: 12px 16px 16px; }
+    .review-wrap { padding: 22px 14px 70px; }
+}
+
+/* Scrollbars (subtle) */
+.reading-scroll::-webkit-scrollbar,
+.questions-scroll::-webkit-scrollbar { width: 10px; }
+.reading-scroll::-webkit-scrollbar-thumb,
+.questions-scroll::-webkit-scrollbar-thumb {
+    background: #d7e0ec;
+    border-radius: 999px;
+    border: 3px solid #fff;
+}
+.reading-scroll::-webkit-scrollbar-thumb:hover,
+.questions-scroll::-webkit-scrollbar-thumb:hover { background: #bccbdd; }
+.reading-scroll::-webkit-scrollbar-track,
+.questions-scroll::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     HEADER
+     ============================================================ -->
+<header class="app-header">
+    <div class="brand">📚 Reading Comprehension</div>
+    <button id="backBtn" class="back-btn hidden">← Back to Readings</button>
+</header>
+
+<main>
+
+    <!-- ========================================================
+         HOME SCREEN
+         ======================================================== -->
+    <section id="homeScreen" class="screen active">
+        <div class="home-wrap">
+            <h1>Choose a Reading</h1>
+            <p class="subtitle">3 readings · 7 questions each · No time limit · Highlight &amp; review tools included</p>
+            <div class="cards" id="cardsContainer"></div>
+        </div>
+    </section>
+
+    <!-- ========================================================
+         EXAM SCREEN
+         ======================================================== -->
+    <section id="examScreen" class="screen">
+        <div class="exam-layout">
+
+            <!-- READING (60%) -->
+            <div class="reading-panel">
+                <div class="reading-tools">
+                    <span class="tools-label">Reading Tools</span>
+                    <button id="highlightBtn" class="tool-btn" type="button">🖍 Highlight: OFF</button>
+                    <button id="clearHighlightBtn" class="tool-btn clear-btn" type="button">🧹 Clear Highlights</button>
+                </div>
+                <div class="reading-scroll" id="readingScroll">
+                    <h2 class="reading-title" id="readingTitle"></h2>
+                    <div class="reading-body" id="readingBody"></div>
+                </div>
+            </div>
+
+            <!-- QUESTIONS (40%) -->
+            <div class="questions-panel">
+                <div class="questions-scroll" id="questionsScroll">
+                    <div class="progress-wrap">
+                        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                    </div>
+                    <div class="q-number" id="qNumber"></div>
+                    <div class="q-text" id="qText"></div>
+                    <div class="options" id="optionsWrap"></div>
+                </div>
+                <div class="questions-footer">
+                    <div class="nav-row">
+                        <button id="prevBtn" class="btn btn-ghost" type="button">← Previous</button>
+                        <button id="nextBtn" class="btn btn-ghost" type="button">Next →</button>
+                    </div>
+                    <div class="dots" id="dotsWrap"></div>
+                    <button id="submitBtn" class="btn btn-primary full" type="button">Submit Test</button>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ========================================================
+         RESULT SCREEN
+         ======================================================== -->
+    <section id="resultScreen" class="screen">
+        <div class="result-wrap">
+            <div class="result-card">
+                <div class="result-emoji">🎉</div>
+                <h2>Test Complete</h2>
+                <div class="result-reading" id="resultReadingTitle"></div>
+                <div class="score-big" id="scoreBig">0 / 7</div>
+                <div class="score-pct" id="scorePct">0%</div>
+                <div class="score-stats">
+                    <div class="stat correct-stat">
+                        <span id="statCorrect">0</span>
+                        <small>Correct</small>
+                    </div>
+                    <div class="stat incorrect-stat">
+                        <span id="statIncorrect">0</span>
+                        <small>Incorrect</small>
+                    </div>
+                </div>
+                <div class="result-actions">
+                    <button id="reviewBtn" class="btn btn-primary" type="button">Review Answers</button>
+                    <button id="retakeBtn" class="btn btn-ghost" type="button">Retake Test</button>
+                    <button id="homeBtn" class="btn btn-ghost" type="button">Back to Readings</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========================================================
+         REVIEW SCREEN
+         ======================================================== -->
+    <section id="reviewScreen" class="screen">
+        <div class="review-wrap">
+            <div class="review-head">
+                <button id="backToResultBtn" class="btn btn-ghost" type="button">← Back to Results</button>
+                <h2>Review Answers</h2>
+            </div>
+            <div id="reviewList"></div>
+            <div class="review-actions">
+                <button id="retakeBtn2" class="btn btn-primary" type="button">Retake Test</button>
+                <button id="homeBtn2" class="btn btn-ghost" type="button">Back to Readings</button>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- ============================================================
+     MODALS
+     ============================================================ -->
+<div class="modal-overlay" id="submitModal">
+    <div class="modal">
+        <h3>Unanswered Questions</h3>
+        <p>You have unanswered questions.<br>Are you sure you want to submit?</p>
+        <div class="modal-actions">
+            <button id="continueTestBtn" class="btn btn-ghost" type="button">Continue Test</button>
+            <button id="submitAnywayBtn" class="btn btn-primary" type="button">Submit Anyway</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="clearModal">
+    <div class="modal">
+        <h3>Clear Highlights</h3>
+        <p>Clear all highlights in this reading?</p>
+        <div class="modal-actions">
+            <button id="cancelClearBtn" class="btn btn-ghost" type="button">Cancel</button>
+            <button id="confirmClearBtn" class="btn btn-primary" type="button">Clear</button>
+        </div>
+    </div>
+</div>
+
+<script>
+"use strict";
+
+/* ================================================================
+   1. READING DATA  (passages + questions + answer keys — unchanged)
+   ================================================================ */
+
+const READINGS = [
+    {
+        id: "r1",
+        title: "Are Human Beings Getting Smarter?",
+        passages: [
+            `Do you think you’re smarter than your parents and grandparents? According to James Flynn, a professor at a New Zealand university, you might be. Over the course of the last century, IQ test scores of people in some countries have gotten increasingly better—on average, three points better for every decade that has passed. This trend of improving scores is known as “the Flynn effect,” and scientists want to know what is behind it.`,
+            `IQ tests and other similar tests are designed to measure general intelligence rather than knowledge. Flynn knew that intelligence is partly inherited from our parents and partly the result of our environment and experiences, but the improvement in test scores was happening too quickly to be explained by heredity. So what happened in the 20th century that led to higher test scores?`,
+            `Scientists have proposed several explanations for the Flynn effect. Some suggest that the improved test scores simply reflect an increased exposure to tests in general. Because we take so many tests, we learn test-taking techniques that help us perform better. Others have pointed to better nutrition, which results in babies being born larger, healthier, and with more brain development than in the past. Another possible explanation is a change in educational styles—children are encouraged to discover things for themselves rather than just memorizing information. This could prepare people to do the kind of problem-solving that intelligence tests require.`,
+            `Flynn himself suggested that learning new technologies may have improved people's problem-solving skills. This may be true for the first decade of his tests, when IQ scores in many countries increased. However, in recent years, IQ test scores in some countries have begun to decline. Data from Norway, the Netherlands, Australia, and Great Britain have shown that as these countries become more and more modern, IQ scores have begun to drop.`,
+            `While scientists aren't sure what’s causing this decline, they think technology is dramatically changing the way that we learn and get information. For example, people are now able to access all kinds of information very easily using online resources like Google or Wikipedia. The danger is when they start to rely too much on these sources of information, and not do any thinking for themselves. Lifestyle changes that come with modern technology may also have a negative effect on intelligence, such as video games and television making people less social. So while the world may have gotten smarter over the 20th century, improving technology and changing lifestyles may soon reverse that trend.`
+        ],
+        questions: [
+            {
+                id: "r1q1",
+                question: "What best describes the Flynn effect?",
+                options: [
+                    { id: "a", text: "a way to measure intelligence", correct: false },
+                    { id: "b", text: "an increase in IQ test scores", correct: true },
+                    { id: "c", text: "a way of teaching university students", correct: false },
+                    { id: "d", text: "an explanation for why people are less smart", correct: false }
+                ]
+            },
+            {
+                id: "r1q2",
+                question: "The Flynn effect is probably the result of ________.",
+                options: [
+                    { id: "a", text: "heredity", correct: false },
+                    { id: "b", text: "our environment and experiences", correct: true },
+                    { id: "c", text: "taking fewer tests", correct: false },
+                    { id: "d", text: "memorizing information", correct: false }
+                ]
+            },
+            {
+                id: "r1q3",
+                question: "IQ tests evaluate our ________.",
+                options: [
+                    { id: "a", text: "knowledge", correct: false },
+                    { id: "b", text: "environment", correct: false },
+                    { id: "c", text: "intelligence", correct: true },
+                    { id: "d", text: "memories", correct: false }
+                ]
+            },
+            {
+                id: "r1q4",
+                question: "Who does <em>others</em> in line 14 refer to?",
+                options: [
+                    { id: "a", text: "babies", correct: false },
+                    { id: "b", text: "scientists", correct: false },
+                    { id: "c", text: "people in general", correct: true },
+                    { id: "d", text: "people who take tests", correct: false }
+                ]
+            },
+            {
+                id: "r1q5",
+                question: "Which sentence gives the main idea of the passage?",
+                options: [
+                    { id: "a", text: "This trend of improving scores is known as “the Flynn effect,” and scientists want to know what is behind it.", correct: true },
+                    { id: "b", text: "Because we take so many tests, we learn test-taking techniques that help us perform better.", correct: false },
+                    { id: "c", text: "However, in recent years, IQ test scores in some countries have begun to decline.", correct: false },
+                    { id: "d", text: "Lifestyle changes that come with modern technology may also have a negative effect on intelligence.", correct: false }
+                ]
+            },
+            {
+                id: "r1q6",
+                question: "The writer uses video games as an example of how ________.",
+                options: [
+                    { id: "a", text: "we are becoming less social", correct: true },
+                    { id: "b", text: "technology can increase problem-solving skills", correct: false },
+                    { id: "c", text: "people don't think for themselves", correct: false },
+                    { id: "d", text: "countries are becoming more technologically advanced", correct: false }
+                ]
+            },
+            {
+                id: "r1q7",
+                question: "Which statement would the writer probably agree with?",
+                options: [
+                    { id: "a", text: "People today are more intelligent in every way.", correct: false },
+                    { id: "b", text: "People today have fewer problems to solve.", correct: false },
+                    { id: "c", text: "People today don't take enough tests.", correct: false },
+                    { id: "d", text: "People today use computers too much.", correct: true }
+                ]
+            }
+        ]
+    },
+
+    {
+        id: "r2",
+        title: "The Film and the Novel: Twilight",
+        passages: [
+            `When a popular book gets made into a movie, there will always be a debate about whether the novel or film is better. The filmmakers always have to consider certain things: do they want to follow the book closely to please dedicated readers, or do they want to change parts of the book if they don’t translate well on-screen? No matter what they do, there will always be people who feel the movie will never be as good as the book, people who will love the movie without ever reading the book, and people who enjoy both.`,
+            `The vampire series <em>Twilight</em>, by Stephenie Meyer, became so popular that movie companies wanted to produce it for the big screen. Most <em>Twilight</em> fans were excited about seeing characters such as Edward and Bella “come to life,” but there were other fans who did not trust the movie script. They assumed the scriptwriters would change parts of the story to make it seem more interesting as a movie.`,
+            `By the time the first <em>Twilight</em> movie was released, millions of people had read the series. Many of these people went on to watch the film, which made $35.7 million just on its opening day. While many fans and critics liked it and said the movie more or less followed the book’s storyline, some fans were not impressed. One change that angered them was that certain sound effects were added to the movie, such as a “whooshing” sound when the vampires jumped. This was not mentioned in the book, and many fans felt that it was too distracting.`,
+            `Those who liked the movie said they enjoyed the light mood and excitement. This was very different from the book. The writing in <em>Twilight</em> is dark and gloomy, like many vampire novels. The movie, however, added more energy to the story and more personality to the characters. For example, many characters in the book are portrayed as being quiet, and they spend most of their time in school. But in the movie, the characters are cooler and funnier—one scene even shows them going surfing together. The director of the first movie, Catherine Hardwicke, thought it was important for the characters to be believable. She wanted them to have a wide variety of emotions, since the series is for, and about, teenagers.`,
+            `In the end, the films were considered a success, even if there were both happy and unhappy fans. It’s a great accomplishment to make films that are watched by millions of people, and you can’t expect to be able to please everyone all of the time.`
+        ],
+        questions: [
+            {
+                id: "r2q1",
+                question: "What is the main idea of the first paragraph?",
+                options: [
+                    { id: "a", text: "It takes a long time to make books into movies.", correct: false },
+                    { id: "b", text: "Filmmakers prefer to make movies out of popular books.", correct: false },
+                    { id: "c", text: "People will always compare movies to the books.", correct: true },
+                    { id: "d", text: "Many people will see a movie without reading the book.", correct: false }
+                ]
+            },
+            {
+                id: "r2q2",
+                question: "Why does the passage say fans were excited to see the movie?",
+                options: [
+                    { id: "a", text: "to see how the story would change", correct: false },
+                    { id: "b", text: "to see which actors would play their favorite characters", correct: false },
+                    { id: "c", text: "to see real people acting out the story", correct: true },
+                    { id: "d", text: "to see if the movie would be better than the book", correct: false }
+                ]
+            },
+            {
+                id: "r2q3",
+                question: "The passage discusses vampires jumping ______.",
+                options: [
+                    { id: "a", text: "as an example of a sound effect", correct: false },
+                    { id: "b", text: "as an example of a change that displeased fans", correct: true },
+                    { id: "c", text: "because it was a special effect and not real", correct: false },
+                    { id: "d", text: "to say how scary the movie was", correct: false }
+                ]
+            },
+            {
+                id: "r2q4",
+                question: "The book <em>Twilight</em> is described as very ______.",
+                options: [
+                    { id: "a", text: "exciting", correct: false },
+                    { id: "b", text: "serious", correct: true },
+                    { id: "c", text: "fun", correct: false },
+                    { id: "d", text: "funny", correct: false }
+                ]
+            },
+            {
+                id: "r2q5",
+                question: "According to the passage, what was NOT changed for the movie?",
+                options: [
+                    { id: "a", text: "storyline", correct: true },
+                    { id: "b", text: "mood", correct: false },
+                    { id: "c", text: "characters", correct: false },
+                    { id: "d", text: "sound effects", correct: false }
+                ]
+            },
+            {
+                id: "r2q6",
+                question: "In line 26, <em>them</em> refers to the ______.",
+                options: [
+                    { id: "a", text: "directors", correct: false },
+                    { id: "b", text: "actors", correct: false },
+                    { id: "c", text: "characters", correct: true },
+                    { id: "d", text: "fans", correct: false }
+                ]
+            },
+            {
+                id: "r2q7",
+                question: "What best describes this passage?",
+                options: [
+                    { id: "a", text: "a comparison of a book and a movie", correct: true },
+                    { id: "b", text: "a review of a movie", correct: false },
+                    { id: "c", text: "an introduction to a book", correct: false },
+                    { id: "d", text: "a discussion of how books are made into movies", correct: false }
+                ]
+            }
+        ]
+    },
+
+    {
+        id: "r3",
+        title: "Organic Farming: The New Vacation",
+        passages: [
+            `In 1971, Sue Coppard worked as a secretary in London. While she enjoyed city life, Sue also missed the countryside where she spent most of her time as a child. So she offered to help out on a farm, or more specifically, an organic farming program organized by a nearby college. She got a few people to volunteer as well, and they spent the weekend doing “housework,” which involved clearing bushes and cleaning drains. Afterwards, the farm managers said they could come back anytime to help out.`,
+            `Sue put a small ad in a magazine, offering people the chance to volunteer at the organic farm. The volunteer program grew quickly, and soon other organic farmers joined in, asking for people to help out. With so many people and farms involved, someone needed to organize the different groups. A few of the original volunteers started WWOOF (World Wide Opportunities on Organic Farms) to help volunteers and farmers find one another. Today, at least 50 different countries have WWOOF organizations, and many other countries have individual farms that participate in the movement.`,
+            `While WWOOF is still a weekend activity for some, it now welcomes travelers and people who wish to live and work on farms for longer periods of time. WWOOF volunteers can stay on a farm for weeks or even months at a time in exchange for hands-on farming and gardening experience. The work can be exhausting, but volunteers think it’s worth it. By working on farms, the volunteers interact with farmers and develop a love for the outdoors and organic farming. Many travelers now use WWOOFing as a way to visit new countries and experience new cultures.`,
+            `As travelers will discover, every WWOOF opportunity is a bit different. In Serbia, you can find Misa and Olja, a couple whose farm is known for its hard cheeses and for its bread made from homegrown grains. Finca Amiruca, a farm in Ecuador, teaches volunteers how to grow peanuts, plantains, and yucca. When volunteering in Japan, you may get to learn about growing rice.`,
+            `WWOOF is only one of the many unique volunteer opportunities available. Volunteering is something that anyone can do, and a wide variety of organizations accept or even welcome volunteers. So the next time you get the itch to be active on the weekend or on vacation, why not look for a good cause to spend your energy on?`
+        ],
+        questions: [
+            {
+                id: "r3q1",
+                question: "Why did Sue first work on a farm?",
+                options: [
+                    { id: "a", text: "She was a student at the university.", correct: false },
+                    { id: "b", text: "She needed money.", correct: false },
+                    { id: "c", text: "She missed the countryside.", correct: true },
+                    { id: "d", text: "She did not enjoy her job.", correct: false }
+                ]
+            },
+            {
+                id: "r3q2",
+                question: "More people joined the program when Sue ______.",
+                options: [
+                    { id: "a", text: "put an advertisement in a magazine", correct: true },
+                    { id: "b", text: "hung posters at a school", correct: false },
+                    { id: "c", text: "asked friends and neighbors to come", correct: false },
+                    { id: "d", text: "offered to pay people to work", correct: false }
+                ]
+            },
+            {
+                id: "r3q3",
+                question: "In line 9, the word <em>organize</em> means ______.",
+                options: [
+                    { id: "a", text: "pay", correct: false },
+                    { id: "b", text: "arrange", correct: true },
+                    { id: "c", text: "cancel", correct: false },
+                    { id: "d", text: "work", correct: false }
+                ]
+            },
+            {
+                id: "r3q4",
+                question: "When living on a WWOOF farm, volunteers ______.",
+                options: [
+                    { id: "a", text: "must pay the farm’s owner", correct: false },
+                    { id: "b", text: "can stay for a long or short time", correct: true },
+                    { id: "c", text: "are given a special bedroom", correct: false },
+                    { id: "d", text: "sleep outdoors", correct: false }
+                ]
+            },
+            {
+                id: "r3q5",
+                question: "Which is NOT a change that WWOOF has undergone since it first started?",
+                options: [
+                    { id: "a", text: "It has spread to many different countries.", correct: false },
+                    { id: "b", text: "It has many more people volunteering for it.", correct: false },
+                    { id: "c", text: "It allows people to stay for longer periods of time.", correct: false },
+                    { id: "d", text: "It is less tiring than it used to be.", correct: true }
+                ]
+            },
+            {
+                id: "r3q6",
+                question: "What is special about the farm in Serbia?",
+                options: [
+                    { id: "a", text: "It is the only farm in the country where rice is grown.", correct: false },
+                    { id: "b", text: "Peanuts, plantains, and yucca are grown on the farm.", correct: false },
+                    { id: "c", text: "It is an animal farm, with lots of pigs and cattle.", correct: false },
+                    { id: "d", text: "The people at the farm make cheese and bread.", correct: true }
+                ]
+            },
+            {
+                id: "r3q7",
+                question: "What is the purpose of the last paragraph?",
+                options: [
+                    { id: "a", text: "to introduce a new volunteer organization", correct: false },
+                    { id: "b", text: "to explain why working on a farm is good", correct: false },
+                    { id: "c", text: "to give one more detail about WWOOF", correct: false },
+                    { id: "d", text: "to encourage readers to volunteer", correct: true }
+                ]
+            }
+        ]
+    }
+];
+
+/* ================================================================
+   2. GLOBAL STATE
+   ================================================================ */
+
+const STORAGE_PROGRESS = "rcProgress";
+const STORAGE_HIGHLIGHTS = "rcHighlights";
+
+let progress = {
+    r1: { best: null, latest: null, attempts: 0 },
+    r2: { best: null, latest: null, attempts: 0 },
+    r3: { best: null, latest: null, attempts: 0 }
+};
+
+let highlightStore = { r1: [], r2: [], r3: [] };
+
+const state = {
+    currentReadingId: null,
+    shuffledQuestions: [],
+    currentQuestionIndex: 0,
+    userAnswers: {},
+    highlightMode: false,
+    activeScreen: "homeScreen"
+};
+
+let paragraphStarts = [];
+
+/* ================================================================
+   3. DOM REFERENCES
+   ================================================================ */
+
+const el = {
+    backBtn: document.getElementById("backBtn"),
+
+    homeScreen: document.getElementById("homeScreen"),
+    examScreen: document.getElementById("examScreen"),
+    resultScreen: document.getElementById("resultScreen"),
+    reviewScreen: document.getElementById("reviewScreen"),
+
+    cardsContainer: document.getElementById("cardsContainer"),
+
+    readingScroll: document.getElementById("readingScroll"),
+    readingTitle: document.getElementById("readingTitle"),
+    readingBody: document.getElementById("readingBody"),
+
+    highlightBtn: document.getElementById("highlightBtn"),
+    clearHighlightBtn: document.getElementById("clearHighlightBtn"),
+
+    questionsScroll: document.getElementById("questionsScroll"),
+    progressFill: document.getElementById("progressFill"),
+    qNumber: document.getElementById("qNumber"),
+    qText: document.getElementById("qText"),
+    optionsWrap: document.getElementById("optionsWrap"),
+
+    prevBtn: document.getElementById("prevBtn"),
+    nextBtn: document.getElementById("nextBtn"),
+    dotsWrap: document.getElementById("dotsWrap"),
+    submitBtn: document.getElementById("submitBtn"),
+
+    resultReadingTitle: document.getElementById("resultReadingTitle"),
+    scoreBig: document.getElementById("scoreBig"),
+    scorePct: document.getElementById("scorePct"),
+    statCorrect: document.getElementById("statCorrect"),
+    statIncorrect: document.getElementById("statIncorrect"),
+    reviewBtn: document.getElementById("reviewBtn"),
+    retakeBtn: document.getElementById("retakeBtn"),
+    homeBtn: document.getElementById("homeBtn"),
+
+    reviewList: document.getElementById("reviewList"),
+    backToResultBtn: document.getElementById("backToResultBtn"),
+    retakeBtn2: document.getElementById("retakeBtn2"),
+    homeBtn2: document.getElementById("homeBtn2"),
+
+    submitModal: document.getElementById("submitModal"),
+    continueTestBtn: document.getElementById("continueTestBtn"),
+    submitAnywayBtn: document.getElementById("submitAnywayBtn"),
+
+    clearModal: document.getElementById("clearModal"),
+    cancelClearBtn: document.getElementById("cancelClearBtn"),
+    confirmClearBtn: document.getElementById("confirmClearBtn")
+};
+
+/* ================================================================
+   4. UTILITIES
+   ================================================================ */
+
+/** Fisher–Yates shuffle — returns a NEW shuffled array */
+function shuffleArray(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = a[i];
+        a[i] = a[j];
+        a[j] = tmp;
+    }
+    return a;
+}
+
+function getReadingById(id) {
+    return READINGS.find(function (r) { return r.id === id; });
+}
+
+function getCurrentReading() {
+    return getReadingById(state.currentReadingId);
+}
+
+function letterFor(index) {
+    return String.fromCharCode(65 + index);
+}
+
+/* ================================================================
+   5. PERSISTENCE (localStorage)
+   ================================================================ */
+
+function loadProgress() {
+    try {
+        const raw = localStorage.getItem(STORAGE_PROGRESS);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            READINGS.forEach(function (r) {
+                if (parsed && parsed[r.id]) {
+                    progress[r.id] = {
+                        best: typeof parsed[r.id].best === "number" ? parsed[r.id].best : null,
+                        latest: typeof parsed[r.id].latest === "number" ? parsed[r.id].latest : null,
+                        attempts: typeof parsed[r.id].attempts === "number" ? parsed[r.id].attempts : 0
+                    };
+                }
+            });
+        }
+    } catch (e) {
+        console.warn("Could not load progress", e);
+    }
+}
+
+function saveProgress() {
+    try {
+        localStorage.setItem(STORAGE_PROGRESS, JSON.stringify(progress));
+    } catch (e) {
+        console.warn("Could not save progress", e);
+    }
+}
+
+function loadHighlights() {
+    try {
+        const raw = localStorage.getItem(STORAGE_HIGHLIGHTS);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            READINGS.forEach(function (r) {
+                if (parsed && Array.isArray(parsed[r.id])) {
+                    highlightStore[r.id] = parsed[r.id].filter(function (h) {
+                        return h && typeof h.start === "number" && typeof h.end === "number";
+                    });
+                } else {
+                    highlightStore[r.id] = [];
+                }
+            });
+        }
+    } catch (e) {
+        console.warn("Could not load highlights", e);
+    }
+    READINGS.forEach(function (r) {
+        if (!Array.isArray(highlightStore[r.id])) highlightStore[r.id] = [];
+    });
+}
+
+function saveHighlights() {
+    try {
+        localStorage.setItem(STORAGE_HIGHLIGHTS, JSON.stringify(highlightStore));
+    } catch (e) {
+        console.warn("Could not save highlights", e);
+    }
+}
+
+/* ================================================================
+   6. SCREEN MANAGEMENT
+   ================================================================ */
+
+function showScreen(screenId) {
+    ["homeScreen", "examScreen", "resultScreen", "reviewScreen"].forEach(function (id) {
+        const node = document.getElementById(id);
+        if (node) node.classList.toggle("active", id === screenId);
+    });
+    state.activeScreen = screenId;
+
+    if (screenId === "examScreen") {
+        el.backBtn.classList.remove("hidden");
+        window.scrollTo(0, 0);
+    } else if (screenId === "homeScreen") {
+        el.backBtn.classList.add("hidden");
+    } else {
+        el.backBtn.classList.remove("hidden");
+        window.scrollTo(0, 0);
+    }
+}
+
+function goHome() {
+    closeAllModals();
+    renderHome();
+    showScreen("homeScreen");
+}
+
+/* ================================================================
+   7. HOME SCREEN
+   ================================================================ */
+
+function renderHome() {
+    el.cardsContainer.innerHTML = "";
+
+    READINGS.forEach(function (reading, index) {
+        const p = progress[reading.id];
+        const bestText = (p.best === null) ? "—" : (p.best + "/7");
+
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const badge = document.createElement("div");
+        badge.className = "card-badge";
+        badge.textContent = "Reading " + (index + 1);
+
+        const title = document.createElement("h3");
+        title.textContent = reading.title;
+
+        const meta = document.createElement("ul");
+        meta.className = "card-meta";
+        meta.innerHTML =
+            "<li>📖 Reading Comprehension</li>" +
+            "<li>❓ 7 Questions</li>" +
+            "<li>🏆 Best Score: <strong>" + bestText + "</strong></li>" +
+            "<li>🔁 Attempts: <strong>" + p.attempts + "</strong></li>";
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn btn-primary full";
+        btn.textContent = "Start Reading " + (index + 1);
+        btn.addEventListener("click", function () {
+            startReading(reading.id);
+        });
+
+        card.appendChild(badge);
+        card.appendChild(title);
+        card.appendChild(meta);
+        card.appendChild(btn);
+        el.cardsContainer.appendChild(card);
+    });
+}
+
+/* ================================================================
+   8. START / RETAKE
+   ================================================================ */
+
+function startReading(readingId) {
+    const reading = getReadingById(readingId);
+    if (!reading) return;
+
+    state.currentReadingId = readingId;
+
+    // Shuffle question order AND answer order (Fisher–Yates)
+    state.shuffledQuestions = shuffleArray(reading.questions).map(function (q) {
+        return {
+            id: q.id,
+            question: q.question,
+            options: shuffleArray(q.options)
+        };
+    });
+
+    state.currentQuestionIndex = 0;
+    state.userAnswers = {};
+    state.highlightMode = false;
+    updateHighlightButton();
+
+    el.readingTitle.textContent = reading.title;
+
+    renderPassage();
+    renderQuestion();
+
+    showScreen("examScreen");
+
+    el.readingScroll.scrollTop = 0;
+    el.questionsScroll.scrollTop = 0;
+}
+
+function retakeTest() {
+    if (!state.currentReadingId) {
+        goHome();
+        return;
+    }
+    // Highlights are intentionally preserved (note-taking tool)
+    startReading(state.currentReadingId);
+}
+
+/* ================================================================
+   9. PASSAGE RENDERING + HIGHLIGHTS
+   ================================================================ */
+
+/** Merge overlapping ranges */
+function mergeRanges(ranges) {
+    if (!ranges || ranges.length === 0) return [];
+    const sorted = ranges.slice().sort(function (a, b) { return a.start - b.start; });
+    const out = [{ start: sorted[0].start, end: sorted[0].end }];
+
+    for (let i = 1; i < sorted.length; i++) {
+        const last = out[out.length - 1];
+        const cur = sorted[i];
+        if (cur.start <= last.end) {
+            last.end = Math.max(last.end, cur.end);
+        } else {
+            out.push({ start: cur.start, end: cur.end });
+        }
+    }
+    return out;
+}
+
+function renderPassage() {
+    const reading = getCurrentReading();
+    if (!reading) return;
+
+    const container = el.readingBody;
+    const scrollTop = el.readingScroll.scrollTop;
+
+    // Compute global start offsets for each paragraph
+    paragraphStarts = [];
+    let offset = 0;
+    reading.passages.forEach(function (para) {
+        paragraphStarts.push(offset);
+        offset += para.length + 2; // +2 for the "\n\n" separator
+    });
+
+    const merged = mergeRanges(highlightStore[reading.id] || []);
+
+    container.innerHTML = "";
+
+    reading.passages.forEach(function (para, i) {
+        const p = document.createElement("p");
+        p.className = "passage-p";
+
+        const pStart = paragraphStarts[i];
+        const pEnd = pStart + para.length;
+
+        // Ranges (merged) that overlap this paragraph
+        const overlapping = merged
+            .filter(function (h) { return h.end > pStart && h.start < pEnd; })
+            .sort(function (a, b) { return a.start - b.start; });
+
+        if (overlapping.length === 0) {
+            p.textContent = para;
+        } else {
+            let pos = 0;
+            overlapping.forEach(function (h) {
+                const localStart = Math.max(h.start, pStart) - pStart;
+                const localEnd   = Math.min(h.end,   pEnd)   - pStart;
+
+                if (localStart > pos) {
+                    p.appendChild(document.createTextNode(para.slice(pos, localStart)));
+                }
+                if (localEnd > localStart) {
+                    const span = document.createElement("span");
+                    span.className = "highlight";
+                    // IMPORTANT: store the ORIGINAL merged offsets so that
+                    // clicking any fragment of a multi-paragraph highlight
+                    // removes the entire range correctly.
+                    span.dataset.start = String(h.start);
+                    span.dataset.end   = String(h.end);
+                    span.textContent = para.slice(localStart, localEnd);
+                    p.appendChild(span);
+                }
+                pos = Math.max(pos, localEnd);
+            });
+            if (pos < para.length) {
+                p.appendChild(document.createTextNode(para.slice(pos)));
+            }
+        }
+
+        container.appendChild(p);
+    });
+
+    el.readingScroll.scrollTop = scrollTop;
+}
+
+/** Convert a DOM (node, offset) position into a flat character offset */
+function getFlatOffset(node, nodeOffset) {
+    const container = el.readingBody;
+    let element = (node.nodeType === 3) ? node.parentNode : node;
+
+    while (element && element !== container && element.tagName !== "P") {
+        element = element.parentNode;
+    }
+    if (!element || element === container || element.tagName !== "P") return null;
+
+    const index = Array.prototype.indexOf.call(container.children, element);
+    if (index < 0 || index >= paragraphStarts.length) return null;
+
+    const range = document.createRange();
+    try {
+        range.setStart(element, 0);
+        range.setEnd(node, nodeOffset);
+    } catch (e) {
+        return null;
+    }
+
+    return paragraphStarts[index] + range.toString().length;
+}
+
+function addHighlight(start, end) {
+    const id = state.currentReadingId;
+    if (!id) return;
+
+    const list = (highlightStore[id] || []).slice();
+    list.push({ start: start, end: end });
+    highlightStore[id] = mergeRanges(list);
+
+    saveHighlights();
+    renderPassage();
+}
+
+function removeHighlightAt(start, end) {
+    const id = state.currentReadingId;
+    if (!id) return;
+
+    highlightStore[id] = (highlightStore[id] || []).filter(function (h) {
+        return !(h.start === start && h.end === end);
+    });
+
+    saveHighlights();
+    renderPassage();
+}
+
+function clearHighlights() {
+    const id = state.currentReadingId;
+    if (!id) return;
+    highlightStore[id] = [];
+    saveHighlights();
+    renderPassage();
+}
+
+/* ---------- Highlight mode ---------- */
+
+function updateHighlightButton() {
+    if (state.highlightMode) {
+        el.highlightBtn.textContent = "✓ Highlight: ON";
+        el.highlightBtn.classList.add("on");
+        el.readingBody.classList.add("hl-mode");
+    } else {
+        el.highlightBtn.textContent = "🖍 Highlight: OFF";
+        el.highlightBtn.classList.remove("on");
+        el.readingBody.classList.remove("hl-mode");
+    }
+}
+
+function enableHighlightMode() {
+    state.highlightMode = true;
+    updateHighlightButton();
+}
+
+function disableHighlightMode() {
+    state.highlightMode = false;
+    updateHighlightButton();
+}
+
+function toggleHighlightMode() {
+    if (state.highlightMode) {
+        disableHighlightMode();
+    } else {
+        enableHighlightMode();
+    }
+}
+
+/* ---------- Selection handling ---------- */
+
+function handleSelectionEnd() {
+    if (!state.highlightMode) return;
+    if (state.activeScreen !== "examScreen") return;
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+
+    const range = selection.getRangeAt(0);
+    const container = el.readingBody;
+
+    if (!container.contains(range.startContainer) || !container.contains(range.endContainer)) {
+        return;
+    }
+
+    const start = getFlatOffset(range.startContainer, range.startOffset);
+    const end = getFlatOffset(range.endContainer, range.endOffset);
+
+    if (start === null || end === null || end <= start) return;
+
+    addHighlight(start, end);
+    selection.removeAllRanges();
+}
+
+document.addEventListener("mouseup", handleSelectionEnd);
+document.addEventListener("touchend", function () {
+    setTimeout(handleSelectionEnd, 30);
+});
+
+/* Click on an existing highlight (in highlight mode) removes it */
+el.readingBody.addEventListener("click", function (e) {
+    if (!state.highlightMode) return;
+
+    const target = e.target;
+    if (!target || !target.classList || !target.classList.contains("highlight")) return;
+
+    const s = Number(target.dataset.start);
+    const en = Number(target.dataset.end);
+    if (isNaN(s) || isNaN(en)) return;
+
+    removeHighlightAt(s, en);
+});
+
+/* ================================================================
+   10. QUESTION RENDERING
+   ================================================================ */
+
+function renderQuestion() {
+    const questions = state.shuffledQuestions;
+    if (!questions.length) return;
+
+    const index = state.currentQuestionIndex;
+    const q = questions[index];
+
+    /* Progress */
+    const answeredCount = questions.filter(function (item) {
+        return state.userAnswers[item.id] !== undefined;
+    }).length;
+    el.progressFill.style.width = ((answeredCount / questions.length) * 100) + "%";
+
+    /* Question number + text */
+    el.qNumber.textContent = "Question " + (index + 1) + " of " + questions.length;
+    el.qText.innerHTML = q.question;
+
+    /* Options */
+    el.optionsWrap.innerHTML = "";
+    const selectedId = state.userAnswers[q.id];
+
+    q.options.forEach(function (opt, i) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "option" + (selectedId === opt.id ? " selected" : "");
+        btn.setAttribute("aria-pressed", selectedId === opt.id ? "true" : "false");
+
+        const letterSpan = document.createElement("span");
+        letterSpan.className = "option-letter";
+        letterSpan.textContent = letterFor(i);
+
+        const textSpan = document.createElement("span");
+        textSpan.className = "option-text";
+        textSpan.innerHTML = opt.text;
+
+        btn.appendChild(letterSpan);
+        btn.appendChild(textSpan);
+
+        btn.addEventListener("click", function () {
+            selectAnswer(q.id, opt.id);
+        });
+
+        el.optionsWrap.appendChild(btn);
+    });
+
+    /* Navigation dots */
+    el.dotsWrap.innerHTML = "";
+    questions.forEach(function (item, i) {
+        const dot = document.createElement("button");
+        dot.type = "button";
+        dot.className = "nav-dot";
+        dot.textContent = String(i + 1);
+
+        if (state.userAnswers[item.id] !== undefined) dot.classList.add("answered");
+        if (i === index) dot.classList.add("current");
+
+        dot.addEventListener("click", function () {
+            goToQuestion(i);
+        });
+
+        el.dotsWrap.appendChild(dot);
+    });
+
+    /* Prev / Next */
+    el.prevBtn.disabled = (index === 0);
+    el.nextBtn.disabled = (index === questions.length - 1);
+
+    // NOTE: We do NOT reset scroll here, so picking an answer
+    // does not make the panel jump to the top. Navigation
+    // functions handle their own scroll reset.
+}
+
+function selectAnswer(questionId, optionId) {
+    state.userAnswers[questionId] = optionId;
+    renderQuestion();
+}
+
+function nextQuestion() {
+    if (state.currentQuestionIndex < state.shuffledQuestions.length - 1) {
+        state.currentQuestionIndex++;
+        renderQuestion();
+        el.questionsScroll.scrollTop = 0;
+    }
+}
+
+function previousQuestion() {
+    if (state.currentQuestionIndex > 0) {
+        state.currentQuestionIndex--;
+        renderQuestion();
+        el.questionsScroll.scrollTop = 0;
+    }
+}
+
+function goToQuestion(index) {
+    if (index < 0 || index >= state.shuffledQuestions.length) return;
+    state.currentQuestionIndex = index;
+    renderQuestion();
+    el.questionsScroll.scrollTop = 0;
+}
+
+/* ================================================================
+   11. SUBMIT / RESULTS
+   ================================================================ */
+
+function openModal(modal) { modal.classList.add("show"); }
+function closeModal(modal) { modal.classList.remove("show"); }
+function closeAllModals() {
+    closeModal(el.submitModal);
+    closeModal(el.clearModal);
+}
+
+function submitTest() {
+    const unanswered = state.shuffledQuestions.filter(function (q) {
+        return state.userAnswers[q.id] === undefined;
+    }).length;
+
+    if (unanswered > 0) {
+        openModal(el.submitModal);
+        return;
+    }
+
+    finishTest();
+}
+
+function finishTest() {
+    closeAllModals();
+
+    const total = state.shuffledQuestions.length;
+    let correctCount = 0;
+
+    state.shuffledQuestions.forEach(function (q) {
+        const chosenId = state.userAnswers[q.id];
+        const correctOpt = q.options.find(function (o) { return o.correct; });
+        if (chosenId !== undefined && correctOpt && chosenId === correctOpt.id) {
+            correctCount++;
+        }
+    });
+
+    /* --- save progress --- */
+    const id = state.currentReadingId;
+    const p = progress[id];
+
+    p.attempts = (p.attempts || 0) + 1;
+    p.latest = correctCount;
+    p.best = (p.best === null) ? correctCount : Math.max(p.best, correctCount);
+    saveProgress();
+
+    /* --- render result screen --- */
+    const reading = getCurrentReading();
+    const percent = Math.round((correctCount / total) * 1000) / 10;
+
+    el.resultReadingTitle.textContent = reading ? reading.title : "";
+    el.scoreBig.textContent = correctCount + " / " + total;
+    el.scorePct.textContent = percent + "%";
+    el.statCorrect.textContent = String(correctCount);
+    el.statIncorrect.textContent = String(total - correctCount);
+
+    showScreen("resultScreen");
+}
+
+/* ================================================================
+   12. REVIEW
+   ================================================================ */
+
+function renderReview() {
+    el.reviewList.innerHTML = "";
+
+    state.shuffledQuestions.forEach(function (q, idx) {
+        const userOptId = state.userAnswers[q.id];
+        const correctOpt = q.options.find(function (o) { return o.correct; });
+        const isCorrect = (userOptId !== undefined && correctOpt && userOptId === correctOpt.id);
+
+        const item = document.createElement("div");
+        item.className = "review-item " + (isCorrect ? "ok" : "bad");
+
+        let html = "";
+        html += '<div class="review-qnum">Question ' + (idx + 1) +
+                (isCorrect
+                    ? '<span class="tag ok">✓ Correct</span>'
+                    : '<span class="tag bad">✗ Incorrect</span>') +
+                '</div>';
+        html += '<div class="review-qtext">' + q.question + '</div>';
+        html += '<ul class="review-options">';
+
+        q.options.forEach(function (opt, i) {
+            const isUser = (opt.id === userOptId);
+            const isRight = !!opt.correct;
+
+            let cls = "";
+            if (isRight) cls += " correct-opt";
+            if (isUser && !isRight) cls += " wrong-opt";
+
+            html += '<li class="' + cls.trim() + '">';
+            html += '<span class="opt-letter">' + letterFor(i) + '.</span>';
+            html += '<span>' + opt.text + '</span>';
+            if (isRight) html += '<span class="mark">✅</span>';
+            if (isUser && !isRight) html += '<span class="mark">❌</span>';
+            if (isUser) html += '<span class="your-tag">Your answer</span>';
+            html += '</li>';
+        });
+
+        html += '</ul>';
+
+        if (userOptId === undefined) {
+            html += '<div class="review-note">You did not answer this question.</div>';
+        } else if (!isCorrect && correctOpt) {
+            const correctIndex = q.options.indexOf(correctOpt);
+            html += '<div class="review-note">Correct answer: ' +
+                    letterFor(correctIndex) + '. ' + correctOpt.text + '</div>';
+        }
+
+        item.innerHTML = html;
+        el.reviewList.appendChild(item);
+    });
+}
+
+function reviewAnswers() {
+    renderReview();
+    showScreen("reviewScreen");
+}
+
+/* ================================================================
+   13. EVENT WIRING
+   ================================================================ */
+
+/* Header back button */
+el.backBtn.addEventListener("click", function () {
+    if (state.activeScreen === "examScreen") {
+        goHome();
+    } else if (state.activeScreen === "reviewScreen") {
+        showScreen("resultScreen");
+    } else {
+        goHome();
+    }
+});
+
+/* Highlight tools */
+el.highlightBtn.addEventListener("click", function () {
+    toggleHighlightMode();
+});
+
+el.clearHighlightBtn.addEventListener("click", function () {
+    openModal(el.clearModal);
+});
+
+el.cancelClearBtn.addEventListener("click", function () {
+    closeModal(el.clearModal);
+});
+
+el.confirmClearBtn.addEventListener("click", function () {
+    clearHighlights();
+    closeModal(el.clearModal);
+});
+
+/* Question navigation */
+el.prevBtn.addEventListener("click", previousQuestion);
+el.nextBtn.addEventListener("click", nextQuestion);
+el.submitBtn.addEventListener("click", submitTest);
+
+/* Submit modal */
+el.continueTestBtn.addEventListener("click", function () {
+    closeModal(el.submitModal);
+});
+el.submitAnywayBtn.addEventListener("click", function () {
+    finishTest();
+});
+
+/* Close modals when clicking the dark overlay */
+el.submitModal.addEventListener("click", function (e) {
+    if (e.target === el.submitModal) closeModal(el.submitModal);
+});
+el.clearModal.addEventListener("click", function (e) {
+    if (e.target === el.clearModal) closeModal(el.clearModal);
+});
+
+/* Escape closes modals */
+document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeAllModals();
+});
+
+/* Result screen buttons */
+el.reviewBtn.addEventListener("click", reviewAnswers);
+el.retakeBtn.addEventListener("click", retakeTest);
+el.homeBtn.addEventListener("click", goHome);
+
+/* Review screen buttons */
+el.backToResultBtn.addEventListener("click", function () {
+    showScreen("resultScreen");
+});
+el.retakeBtn2.addEventListener("click", retakeTest);
+el.homeBtn2.addEventListener("click", goHome);
+
+/* ================================================================
+   14. INIT
+   ================================================================ */
+
+function init() {
+    loadProgress();
+    loadHighlights();
+    renderHome();
+    updateHighlightButton();
+    showScreen("homeScreen");
+}
+
+init();
+</script>
+</body>
+</html>
